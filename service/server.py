@@ -5,40 +5,32 @@ import threading
 import time
 
 class AudioStreamServer:
-    def __init__(self, host=socket.gethostname(), port=5000, chunk_duration=5):
+    def __init__(self, host=socket.gethostname(), port=5000, chunk_duration=10):
         self.host = host
         self.port = port
         self.chunk_duration = chunk_duration
         self.buffer = bytearray()
         self.buffer_lock = threading.Lock()
         
-        # Create directory for saved chunks
-        self.save_dir = "ts_chunks"
-        if not os.path.exists(self.save_dir):
-            os.makedirs(self.save_dir)
-            
-        # Size of chunks to read from socket
+        self.save_dir = "raw_chunks"
+        os.makedirs(self.save_dir, exist_ok=True)
+
         self.socket_chunk_size = 8192
-        
-        # Approximate size for 5 seconds of audio data (bitrate * duration)
-        # Assuming 128kbps audio
-        self.bytes_per_chunk = 128 * 1024 * chunk_duration // 8
+        self.bytes_per_chunk = 44100 * 2 * 2 * self.chunk_duration  # 44.1kHz, 16-bit, stereo
     
     def start(self):
-        server_socket = socket.socket()
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         server_socket.listen(1)
         print(f"Server listening on port {self.port}...")
-        
-        processing_thread = threading.Thread(target=self.process_chunks)
-        processing_thread.daemon = True
-        processing_thread.start()
-        
+
+        threading.Thread(target=self.process_chunks, daemon=True).start()
+
         while True:
             conn, address = server_socket.accept()
             print(f"Connection from: {address}")
-            self.handle_client(conn)
-    
+            threading.Thread(target=self.handle_client, args=(conn,), daemon=True).start()
+
     def handle_client(self, conn):
         try:
             while True:
@@ -48,35 +40,36 @@ class AudioStreamServer:
                 
                 with self.buffer_lock:
                     self.buffer.extend(data)
+                    print(f"Received {len(data)} bytes")
+                    
         except Exception as e:
-            print(f"Error handling client: {e}")
+            print(f"Client handling error: {e}")
         finally:
             conn.close()
-    
+
     def process_chunks(self):
         while True:
             with self.buffer_lock:
                 if len(self.buffer) >= self.bytes_per_chunk:
-                    # Extract chunk
                     chunk_data = bytes(self.buffer[:self.bytes_per_chunk])
                     self.buffer = self.buffer[self.bytes_per_chunk:]
-                    self.save_chunk(chunk_data)
+                    self.save_chunk_as_raw(chunk_data)
             time.sleep(0.1)
-    
-    def save_chunk(self, chunk_data):
+
+    def save_chunk_as_raw(self, chunk_data):
         try:
-            # Generate filename with timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"chunk_{timestamp}.ts"
+            filename = f"chunk_{timestamp}.raw"
             filepath = os.path.join(self.save_dir, filename)
-            
-            # Save the audio chunk as a TS file
+
             with open(filepath, 'wb') as f:
                 f.write(chunk_data)
-            print(f"Saved chunk as TS: {filename}")
             
+            print(f"Saved chunk as RAW: {filename}")
+
         except Exception as e:
-            print(f"Error saving chunk: {e}")
+            print(f"Error saving RAW file: {e}")
+
 
 if __name__ == '__main__':
     server = AudioStreamServer()
