@@ -18,3 +18,25 @@ Real-time audio streaming from mobile devices (iOS/Android).
 Random Forest NLP model for scam detection.
 Integration with mobile apps (built using React Native).
 Backend API using FastAPI in Python for real-time audio processing and model inference.
+
+## BAckend Project Setup
+
+### Install Python3
+To install python on your system, [refer this.](https://www.geeksforgeeks.org/download-and-install-python-3-latest-version/)
+
+### Clone the repo
+```
+git clone https://github.com/joshsoftware/hackathon-team-4.git
+cd service
+```
+
+### Required Modules
+To install all the required modeules to run project, use this command
+```
+pip install -r requirement.txt
+```
+## Run
+To run the system, use command
+```
+uvicorn app:app --reload
+```
