@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+numpy
+pandas
+matplotlib
+seaborn
+nltk
+wordcloud
+tensorflow
+scikit-learn
+keras
+requests
