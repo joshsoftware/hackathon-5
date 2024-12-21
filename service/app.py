@@ -45,10 +45,11 @@ async def results(request: Request):
         req = await request.json()
 
         # Extract action from the request
-        action = req.get('queryResult', {}).get('action', 'unknown')
-
+        # action = req.get('queryResult', {}).get('action', 'unknown')
+        response_text = req.get('queryResult', {}).get('fulfillmentText', 'Default response')
+        return JSONResponse(content={"fulfillmentText": response_text})
         # Return a fulfillment response
-        return {"fulfillmentText": f"This is a response from webhook. Action: {action}"}
+        # return {"fulfillmentText": f"This is a response from webhook. Action: {action}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {e}")
 
